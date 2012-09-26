@@ -6,3 +6,6 @@ tmp
 .history
 dist
 .idea
+.idea_modules
+.settings
+atlassian-ide-plugin.xml
