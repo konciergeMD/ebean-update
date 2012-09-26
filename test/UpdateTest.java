@@ -1,4 +1,6 @@
+import models.Bar;
 import models.Foo;
+import models.UpdateEnum;
 import org.junit.Test;
 
 import static org.fest.assertions.Assertions.assertThat;
@@ -7,168 +9,313 @@ import static play.test.Helpers.running;
 
 public class UpdateTest {
 
+    /**
+     * Updating an detached entity with an id that already exists should succeed
+     */
     @Test
-    public void saveSameIdShouldUpdate() {
+    public void updateDetachedShouldUpdate() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.stringVar = "Foo1";
                 foo1.save();
 
-                try {
-                    Foo foo2 = new Foo();
-                    foo2.id = foo1.id;
-                    foo2.name = "Foo2";
-                    foo2.save();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("Foo1");
 
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.stringVar = "Foo2";
+                foo2.update();
 
-                assertThat(Foo.find.byId(foo1.id).name).isEqualTo("Foo2");
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("Foo2");
             }
         });
     }
 
+    /**
+     * Updating an detached entity with default string should modify row
+     * NOTE: This behavior implies that using defaults on Model objects is very dangerous
+     */
     @Test
-    public void saveSameIdAfterFindShouldUpdate() {
+    public void updateDetachedWithDefaultStringShouldUpdateRow() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.stringVar = "don'tChangeMeBro";
                 foo1.save();
 
-                try {
-                    Foo foo2 = Foo.find.byId(foo1.id);
-                    foo2.name = "Foo2";
-                    foo2.save();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("don'tChangeMeBro");
 
-                assertThat(Foo.find.byId(foo1.id).name).isEqualTo("Foo2");
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("default");
             }
         });
     }
 
+    /**
+     * Updating an detached entity with default enum should modify row
+     * NOTE: This behavior implies that using defaults on Model objects is very dangerous
+     */
     @Test
-    public void updateSameIdShouldUpdate() {
+    public void updateDetachedWithDefaultEnumShouldUpdateRow() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.enumVar = UpdateEnum.UPDATED;
                 foo1.save();
 
-                try {
-                    Foo foo2 = new Foo();
-                    foo2.id = foo1.id;
-                    foo2.name = "Foo2";
-                    foo2.update();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(UpdateEnum.UPDATED);
 
-                assertThat(Foo.find.byId(foo1.id).name).isEqualTo("Foo2");
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(UpdateEnum.DEFAULT);
             }
         });
     }
 
+    /**
+     * Updating an detached entity with default integer should modify row
+     * NOTE: This behavior implies that using defaults on Model objects is very dangerous
+     */
     @Test
-    public void updateSameIdWithNullShouldUpdate() {
+    public void updateDetachedWithDefaultIntegerShouldUpdateRow() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.integerVar = 2;
                 foo1.save();
 
-                try {
-                    Foo foo2 = new Foo();
-                    foo2.id = foo1.id;
-                    foo2.name = null;
-                    foo2.update();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(2);
 
-                assertThat(Foo.find.byId(foo1.id).name).isNull();
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(1);
             }
         });
     }
 
+    /**
+     * Updating an detached entity using empty string should update
+     */
     @Test
-    public void updateSameIdWithEmptyStringShouldUpdate() {
+    public void updateDetachedWithEmptyStringShouldUpdate() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.stringVar = "Foo1";
                 foo1.save();
 
-                try {
-                    Foo foo2 = new Foo();
-                    foo2.id = foo1.id;
-                    foo2.name = "";
-                    foo2.update();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("Foo1");
 
-                assertThat(Foo.find.byId(foo1.id).name).isEmpty();
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.stringVar = "";
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("");
             }
         });
     }
 
+    /**
+     * Updating an detached entity using null should not update
+     */
     @Test
-    public void updateSameIdWithDefaultNameShouldNotUpdate() {
+    public void updateDetachedWithNullStringShouldNotUpdate() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.stringVar = "Foo1";
                 foo1.save();
 
-                try {
-                    Foo foo2 = new Foo();
-                    foo2.id = foo1.id;
-                    foo2.update();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("Foo1");
 
-                assertThat(Foo.find.byId(foo1.id).name).isEqualTo("Foo1");
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.stringVar = null;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("Foo1");
             }
         });
     }
 
+    /**
+     * Updating an detached entity using null should not update
+     */
     @Test
-    public void saveWithDefaultValueShouldHaveDefaultValue() {
+    public void updateDetachedWithNullIntegerShouldNotUpdate() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.name = "Foo1";
+                foo1.integerVar = 2;
                 foo1.save();
 
-                assertThat(Foo.find.byId(foo1.id).value).isEqualTo(Foo.FooEnum.ONE);
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(2);
+
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.integerVar = null;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(2);
             }
         });
     }
 
+    /**
+     * Updating an detached entity using null enum should not update
+     */
     @Test
-    public void updateSameIdWithDefaultValueShouldNotUpdate() {
+    public void updateDetachedWithNullEnumShouldNotUpdate() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.value = Foo.FooEnum.TWO;
+                foo1.enumVar = UpdateEnum.UPDATED;
                 foo1.save();
 
-                try {
-                    Foo foo2 = new Foo();
-                    foo2.id = foo1.id;
-                    foo2.update();
-                } catch (Throwable t) {
-                    System.out.println(t.toString());
-                }
+                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(UpdateEnum.UPDATED);
 
-                assertThat(Foo.find.byId(foo1.id).value).isEqualTo(Foo.FooEnum.TWO);
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.enumVar = null;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(UpdateEnum.UPDATED);
             }
         });
     }
+
+    /**
+     * Updating an detached entity using null object should not update
+     */
+    @Test
+    public void updateDetachedWithNullObjectShouldNotUpdate() {
+        running(fakeApplication(), new Runnable() {
+            public void run() {
+                Bar bar1 = new Bar();
+                bar1.save();
+
+                Foo foo1 = new Foo();
+                foo1.objectVar = bar1;
+                foo1.save();
+
+                assertThat(Foo.find.byId(foo1.id).objectVar).isEqualTo(bar1);
+
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.objectVar = null;
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).objectVar).isEqualTo(bar1);
+            }
+        });
+    }
+
+
+//    @Test
+//    public void updateSameIdWithNullShouldUpdate() {
+//        running(fakeApplication(), new Runnable() {
+//            public void run() {
+//                Foo foo1 = new Foo();
+//                foo1.stringVar = "Foo1";
+//                foo1.save();
+//
+//                try {
+//                    Foo foo2 = new Foo();
+//                    foo2.id = foo1.id;
+//                    foo2.stringVar = null;
+//                    foo2.update();
+//                } catch (Throwable t) {
+//                    System.out.println(t.toString());
+//                }
+//
+//                assertThat(Foo.find.byId(foo1.id).stringVar).isNull();
+//            }
+//        });
+//    }
+//
+//    @Test
+//    public void updateSameIdWithEmptyStringShouldUpdate() {
+//        running(fakeApplication(), new Runnable() {
+//            public void run() {
+//                Foo foo1 = new Foo();
+//                foo1.stringVar = "Foo1";
+//                foo1.save();
+//
+//                try {
+//                    Foo foo2 = new Foo();
+//                    foo2.id = foo1.id;
+//                    foo2.stringVar = "";
+//                    foo2.update();
+//                } catch (Throwable t) {
+//                    System.out.println(t.toString());
+//                }
+//
+//                assertThat(Foo.find.byId(foo1.id).stringVar).isEmpty();
+//            }
+//        });
+//    }
+//
+//    @Test
+//    public void updateSameIdWithDefaultNameShouldNotUpdate() {
+//        running(fakeApplication(), new Runnable() {
+//            public void run() {
+//                Foo foo1 = new Foo();
+//                foo1.stringVar = "Foo1";
+//                foo1.save();
+//
+//                try {
+//                    Foo foo2 = new Foo();
+//                    foo2.id = foo1.id;
+//                    foo2.update();
+//                } catch (Throwable t) {
+//                    System.out.println(t.toString());
+//                }
+//
+//                assertThat(Foo.find.byId(foo1.id).stringVar).isEqualTo("Foo1");
+//            }
+//        });
+//    }
+//
+//    @Test
+//    public void saveWithDefaultValueShouldHaveDefaultValue() {
+//        running(fakeApplication(), new Runnable() {
+//            public void run() {
+//                Foo foo1 = new Foo();
+//                foo1.stringVar = "Foo1";
+//                foo1.save();
+//
+//                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(Foo.UpdateEnum.DEFAULT);
+//            }
+//        });
+//    }
+//
+//    @Test
+//    public void updateSameIdWithDefaultValueShouldNotUpdate() {
+//        running(fakeApplication(), new Runnable() {
+//            public void run() {
+//                Foo foo1 = new Foo();
+//                foo1.enumVar = Foo.UpdateEnum.UPDATED;
+//                foo1.save();
+//
+//                try {
+//                    Foo foo2 = new Foo();
+//                    foo2.id = foo1.id;
+//                    foo2.update();
+//                } catch (Throwable t) {
+//                    System.out.println(t.toString());
+//                }
+//
+//                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(Foo.UpdateEnum.UPDATED);
+//            }
+//        });
+//    }
 }
