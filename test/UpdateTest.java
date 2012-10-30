@@ -1,7 +1,12 @@
+import com.avaje.ebean.Ebean;
+import com.google.common.base.Optional;
 import models.Bar;
 import models.Foo;
 import models.UpdateEnum;
 import org.junit.Test;
+
+import java.util.HashSet;
+import java.util.Set;
 
 import static org.fest.assertions.Assertions.assertThat;
 import static play.test.Helpers.fakeApplication;
@@ -171,24 +176,74 @@ public class UpdateTest {
     }
 
     /**
-     * Updating an detached entity using null enum should not update
+     * Updating an detached entity using an absent value should update to null
      */
     @Test
-    public void updateDetachedWithNullEnumShouldNotUpdate() {
+    public void updateDetachedWithAbsentIntegerShouldUpdate() {
         running(fakeApplication(), new Runnable() {
             public void run() {
                 Foo foo1 = new Foo();
-                foo1.enumVar = UpdateEnum.UPDATED;
+                foo1.integerVar = 2;
                 foo1.save();
 
-                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(UpdateEnum.UPDATED);
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(2);
 
                 Foo foo2 = new Foo();
                 foo2.id = foo1.id;
-                foo2.enumVar = null;
+                foo2.optionalIntegerVar(Optional.<Integer>absent());
                 foo2.update();
 
-                assertThat(Foo.find.byId(foo1.id).enumVar).isEqualTo(UpdateEnum.UPDATED);
+                assertThat(Foo.find.byId(foo1.id).optionalIntegerVar()).isNull();
+            }
+        });
+    }
+
+    /**
+     * Updating an detached entity using a present value should update
+     */
+    @Test
+    public void updateDetachedWithPresentIntegerShouldUpdate() {
+        running(fakeApplication(), new Runnable() {
+            public void run() {
+                Foo foo1 = new Foo();
+                foo1.integerVar = 2;
+                foo1.save();
+
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(2);
+
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.optionalIntegerVar(Optional.of(47));
+                foo2.update();
+
+                assertThat(Foo.find.byId(foo1.id).optionalIntegerVar()).isEqualTo(47);
+            }
+        });
+    }
+
+    /**
+     * Updating an detached entity using an absent value should update to null
+     */
+    @Test
+    public void updateDetachedWithNullIntegerShouldUpdate() {
+        running(fakeApplication(), new Runnable() {
+            public void run() {
+                Foo foo1 = new Foo();
+                foo1.integerVar = 2;
+                foo1.save();
+
+                assertThat(Foo.find.byId(foo1.id).integerVar).isEqualTo(2);
+
+                Foo foo2 = new Foo();
+                foo2.id = foo1.id;
+                foo2.integerVar = null;
+
+                Set<String> changedFields = new HashSet<String>();
+                changedFields.add("id");
+                changedFields.add("integerVar");
+                Ebean.update(foo2, changedFields);
+
+                assertThat(Foo.find.byId(foo1.id).integerVar).isNull();
             }
         });
     }
